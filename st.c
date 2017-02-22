@@ -222,7 +222,6 @@ static char base64dec_getc(const char **);
 static ssize_t xwrite(int, const char *, size_t);
 
 char *cwd = NULL;
-char *plumber_cmd = plumber;
 
 /* Globals */
 static Term term;
