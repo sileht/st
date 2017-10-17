@@ -108,7 +108,11 @@ void selstart(int, int, int);
 void selextend(int, int, int, int);
 int selected(int, int);
 char *getsel(void);
+
+// Plugins
 void copyurl(const Arg *);
+void externalpipe(const Arg *);
+
 
 size_t utf8encode(Rune, char *);
 
@@ -130,3 +134,4 @@ extern unsigned int tabspaces;
 extern unsigned int defaultfg;
 extern unsigned int defaultbg;
 	int cyo; /* char y offset */
+  char *cwd;

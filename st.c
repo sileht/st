@@ -134,7 +134,6 @@ typedef struct {
 	int *tabs;
 } Term;
 
-static void externalpipe(const Arg *);
 /* CSI Escape sequence structs */
 /* ESC '[' [[ [<priv>] <arg> [;]] <mode> [<mode>]] */
 typedef struct {
@@ -1902,7 +1901,7 @@ strhandle(void)
 	case ']': /* OSC -- Operating System Command */
 		switch (par) {
 		case 7:
-			if (narg > 1 && access(strescseq.args[1], X_OK) != -1)
+			if (narg > 1)
 				cwd = strescseq.args[1];
 		case 0:
 		case 1:

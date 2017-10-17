@@ -59,6 +59,7 @@ static void zoomreset(const Arg *);
 
 /* config.h for applying patches and the configuration. */
 #include "config.h"
+char *plumber_cmd = plumber;
 
 /* XEMBED messages */
 #define XEMBED_FOCUS_IN  4
@@ -80,6 +81,7 @@ typedef struct {
 	int w, h; /* window width and height */
 	int ch; /* char height */
 	int cw; /* char width  */
+  int cyo; /* char y offset */
 	int mode; /* window state/mode flags */
 	int cursor; /* cursor style */
 } TermWindow;
@@ -212,8 +214,8 @@ static XWindow xw;
 static XSelection xsel;
 static TermWindow win;
 
-extern char *cwd;
 extern char *plumber_cmd;
+extern char *cwd;
 char winid[64];
 
 /* Font Ring Cache */
@@ -636,39 +638,43 @@ setsel(char *str, Time t)
 	XSetSelectionOwner(xw.dpy, XA_PRIMARY, xw.win, t);
 	if (XGetSelectionOwner(xw.dpy, XA_PRIMARY) != xw.win)
 		selclear();
-
-  xclipcopy();
 }
 
 void
 xsetsel(char *str)
 {
 	setsel(str, CurrentTime);
+  xclipcopy();
 }
 
 void
 brelease(XEvent *e)
 {
 	pid_t child;
-	char cmd[100 + strlen(cwd)];
+  size_t cwd_size = 0;
+  if (cwd != NULL)
+    cwd_size = strlen(cwd);
+	char cmd[100 + cwd_size];
 
 	if (IS_SET(MODE_MOUSE) && !(e->xbutton.state & forceselmod)) {
 		mousereport(e);
 		return;
 	}
 
-	if (e->xbutton.button == Button2)
+	if (e->xbutton.button == Button2) {
 		selpaste(NULL);
-	} else if (e->xbutton.button == Button3) {
+  } else if (e->xbutton.button == Button3) {
+    if (cwd == NULL)
+      return;
 		switch(child = fork()) {
 			case -1:
 				return;
 			case 0:
-				sprintf(cmd, "(cd %s ; %s %s)", cwd, plumber_cmd, sel.primary);
+				sprintf(cmd, "(cd %s ; %s %s)", cwd, plumber_cmd, xsel.primary);
 				execvp( "sh", (char *const []){ "/bin/sh", "-c", cmd, 0 });
 				exit(127);
-		}
-	else if (e->xbutton.button == Button1)
+    }
+	} else if (e->xbutton.button == Button1)
 		mousesel(e, 1);
 }
 
