@@ -175,6 +175,7 @@ static void mousesel(XEvent *, int);
 static void mousereport(XEvent *);
 static char *kmap(KeySym, uint);
 static int match(uint, uint);
+void selcopy(Time);
 
 static void run(void);
 static void usage(void);
@@ -210,6 +211,10 @@ static DC dc;
 static XWindow xw;
 static XSelection xsel;
 static TermWindow win;
+
+extern char *cwd;
+extern char *plumber_cmd;
+char winid[64];
 
 /* Font Ring Cache */
 enum {
@@ -631,6 +636,8 @@ setsel(char *str, Time t)
 	XSetSelectionOwner(xw.dpy, XA_PRIMARY, xw.win, t);
 	if (XGetSelectionOwner(xw.dpy, XA_PRIMARY) != xw.win)
 		selclear();
+
+  xclipcopy();
 }
 
 void
@@ -642,6 +649,9 @@ xsetsel(char *str)
 void
 brelease(XEvent *e)
 {
+	pid_t child;
+	char cmd[100 + strlen(cwd)];
+
 	if (IS_SET(MODE_MOUSE) && !(e->xbutton.state & forceselmod)) {
 		mousereport(e);
 		return;
@@ -649,6 +659,15 @@ brelease(XEvent *e)
 
 	if (e->xbutton.button == Button2)
 		selpaste(NULL);
+	} else if (e->xbutton.button == Button3) {
+		switch(child = fork()) {
+			case -1:
+				return;
+			case 0:
+				sprintf(cmd, "(cd %s ; %s %s)", cwd, plumber_cmd, sel.primary);
+				execvp( "sh", (char *const []){ "/bin/sh", "-c", cmd, 0 });
+				exit(127);
+		}
 	else if (e->xbutton.button == Button1)
 		mousesel(e, 1);
 }
@@ -958,6 +977,7 @@ xloadfonts(char *fontstr, double fontsize)
 	/* Setting character width and height. */
 	win.cw = ceilf(dc.font.width * cwscale);
 	win.ch = ceilf(dc.font.height * chscale);
+	win.cyo = ceilf(dc.font.height * (chscale - 1) / 2);
 
 	FcPatternDel(pattern, FC_SLANT);
 	FcPatternAddInteger(pattern, FC_SLANT, FC_SLANT_ITALIC);
@@ -1084,6 +1104,7 @@ xinit(int cols, int rows)
 			win.w, win.h, 0, XDefaultDepth(xw.dpy, xw.scr), InputOutput,
 			xw.vis, CWBackPixel | CWBorderPixel | CWBitGravity
 			| CWEventMask | CWColormap, &xw.attrs);
+	snprintf(winid, LEN(winid), "%lu", (unsigned long)xw.win);
 
 	memset(&gcvalues, 0, sizeof(gcvalues));
 	gcvalues.graphics_exposures = False;
@@ -1161,7 +1182,7 @@ xmakeglyphfontspecs(XftGlyphFontSpec *specs, const Glyph *glyphs, int len, int x
 	FcCharSet *fccharset;
 	int i, f, numspecs = 0;
 
-	for (i = 0, xp = winx, yp = winy + font->ascent; i < len; ++i) {
+	for (i = 0, xp = winx, yp = winy + font->ascent + win.cyo; i < len; ++i) {
 		/* Fetch rune and mode for current glyph. */
 		rune = glyphs[i].u;
 		mode = glyphs[i].mode;
@@ -1186,7 +1207,7 @@ xmakeglyphfontspecs(XftGlyphFontSpec *specs, const Glyph *glyphs, int len, int x
 				font = &dc.bfont;
 				frcflags = FRC_BOLD;
 			}
-			yp = winy + font->ascent;
+			yp = winy + font->ascent + win.cyo;
 		}
 
 		/* Lookup character index with default font. */
@@ -1358,9 +1379,14 @@ xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, i
 	}
 
 	if (base.mode & ATTR_REVERSE) {
-		temp = fg;
-		fg = bg;
-		bg = temp;
+		if (bg == fg) {
+			bg = &dc.col[defaultfg];
+			fg = &dc.col[defaultbg];
+		} else {
+			temp = fg;
+			fg = bg;
+			bg = temp;
+		}
 	}
 
 	if (base.mode & ATTR_BLINK && win.mode & MODE_BLINK)
@@ -1399,12 +1425,12 @@ xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, i
 
 	/* Render underline and strikethrough. */
 	if (base.mode & ATTR_UNDERLINE) {
-		XftDrawRect(xw.draw, fg, winx, winy + dc.font.ascent + 1,
+		XftDrawRect(xw.draw, fg, winx, winy + win.cyo + dc.font.ascent + 1,
 				width, 1);
 	}
 
 	if (base.mode & ATTR_STRUCK) {
-		XftDrawRect(xw.draw, fg, winx, winy + 2 * dc.font.ascent / 3,
+		XftDrawRect(xw.draw, fg, winx, winy + win.cyo + 2 * dc.font.ascent / 3,
 				width, 1);
 	}
 
