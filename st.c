@@ -1555,30 +1555,30 @@ tsetmode(int priv, int set, int *args, int narg)
 				xsetmode(!set, MODE_HIDE);
 				break;
 			case 9:    /* X10 mouse compatibility mode */
-				xsetpointermotion(0);
-				xsetmode(0, MODE_MOUSE);
-				xsetmode(set, MODE_MOUSEX10);
+				//xsetpointermotion(0);
+				//xsetmode(0, MODE_MOUSE);
+			//	xsetmode(set, MODE_MOUSEX10);
 				break;
 			case 1000: /* 1000: report button press */
-				xsetpointermotion(0);
-				xsetmode(0, MODE_MOUSE);
-				xsetmode(set, MODE_MOUSEBTN);
+				//xsetpointermotion(0);
+				//xsetmode(0, MODE_MOUSE);
+				//xsetmode(set, MODE_MOUSEBTN);
 				break;
 			case 1002: /* 1002: report motion on button press */
-				xsetpointermotion(0);
-				xsetmode(0, MODE_MOUSE);
-				xsetmode(set, MODE_MOUSEMOTION);
+				//xsetpointermotion(0);
+				//xsetmode(0, MODE_MOUSE);
+				//xsetmode(set, MODE_MOUSEMOTION);
 				break;
 			case 1003: /* 1003: enable all mouse motions */
-				xsetpointermotion(set);
-				xsetmode(0, MODE_MOUSE);
-				xsetmode(set, MODE_MOUSEMANY);
+				//xsetpointermotion(set);
+				//xsetmode(0, MODE_MOUSE);
+				//xsetmode(set, MODE_MOUSEMANY);
 				break;
 			case 1004: /* 1004: send focus events to tty */
 				xsetmode(set, MODE_FOCUS);
 				break;
 			case 1006: /* 1006: extended reporting mode */
-				xsetmode(set, MODE_MOUSESGR);
+				//xsetmode(set, MODE_MOUSESGR);
 				break;
 			case 1034:
 				xsetmode(set, MODE_8BIT);
