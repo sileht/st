@@ -40,7 +40,7 @@ dist: clean
 	tar -cf - st-$(VERSION) | gzip > st-$(VERSION).tar.gz
 	rm -rf st-$(VERSION)
 
-user_install: st
+zinit_install: clean st
 	tic -sx st.info
 
 install: st
